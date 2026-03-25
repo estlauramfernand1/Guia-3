@@ -3,31 +3,22 @@ import tkinter as tk
 from tkinter import messagebox
 import time
 from collections import deque
+
 class documento:
   def __init__(self, nombre, paginas, tiempoxpag):
     self.nombre=nombre
     self.paginas=paginas
     self.tiempoxpagina=tiempoxpag
 
-class colaimp:
-  def __init__(self):
-    self.cola=deque() #aqui es donde vienen los documentos en espera
-
-  def agregar(self, documento):
-    self.cola.append(documento) #entra por el el final
-
-  def siguiente(self):
-    return self.cola.popleft() #sale por el frente
-
-  def vacio(self):
-    return len(self.cola)==0
 
 #Esta es la ventana, luego su titulo y en la parte de lo numeros es el ancho por el alto en pixeles :P
 
 ventana=tk.Tk()
 ventana.title("Cola Impresion <3")
 ventana.geometry("600x600")
-colap=colaimp() #aqui se constrimos el objeto
+
+colap=deque() #aqui se constrimos el objeto
+
 imprimiendo = False
 
 def agregar_documento():
@@ -47,7 +38,7 @@ def agregar_documento():
         return
 
     doc=documento(nombre, paginas, tiempo)
-    colap.agregar(doc)
+    colap.append(doc)
 
     listbox.insert(tk.END, f"{nombre} ({paginas} páginas)")
     entry_nombre.delete(0, tk.END)
@@ -61,17 +52,21 @@ def imprimir_pag(doc, pagact):
   global imprimiendo
 
   if pagact<=doc.paginas:
-    estado_label.config(text=f"Imprimiendo {doc.nombre} , pagina {pagact} de {doc.paginas}", fg="yellow")
+    estado_label.config(text=f"Imprimiendo {doc.nombre} , pagina {pagact} de {doc.paginas}", fg="blue")
 
     ventana.after(int(doc.tiempoxpagina*1000),lambda:imprimir_pag(doc, pagact+1))
 
   else:
     #cuando el documento se termino de imprimir entonces lo sacamos para no verlo mas
+
     listbox.delete(0)
+
     #luego revisamos si hay mas documentos en la cola
-    if not colap.vacio():
-      siguiente_doc=colap.siguiente()
+
+    if len(colap) !=0:
+      siguiente_doc=colap.popleft()
       imprimir_pag(siguiente_doc, 1)
+
     else:
       imprimiendo=False
       estado_label.config(text="Sin documentos en cola", fg="green")
@@ -84,38 +79,52 @@ def inicio_imp():
   if imprimiendo:
     return #como ya esta imprimiendo, entonces le dicimos que no haga nada :P
 
-  if colap.vacio():
+  if len(colap)==0:
     estado_label.config(text="No hay documento en la cola :D",fg="orange")
     return
 
   imprimiendo=True
-  doc=colap.siguiente()
+  doc=colap.popleft()
   listbox.delete(0) #eliminarlo de la lista para que no se vea
   imprimir_pag(doc,1) #le decimos que empiece desde la pagina 1
 
-tk.Label(ventana, text="Nombre del documento: ").pack()
-entry_nombre=tk.Entry(ventana)
-entry_nombre.pack()
 
-tk.Label(ventana, text="Numero de paginas:").pack()
-entry_paginas=tk.Entry(ventana)
-entry_paginas.pack()
+#primero creo los frames, uno para cada lado
 
-tk.Label(ventana, text="Tiempo por pagina (seg):").pack()
-entry_tiempo=tk.Entry(ventana)
-entry_tiempo.pack()
+lado_izq=tk.Frame(ventana,bg="lightblue") 
+lado_der=tk.Frame(ventana, bg="lightyellow")
 
-botagregar=tk.Button(ventana, text="Agregar a la cola", command=agregar_documento)
-botagregar.pack()
+lado_izq.grid(row=0,column=0) #la columna 0 es la de la izquierda
+lado_der.grid(row=0,column=1) #la columna 1 es la de la derecha (lo malo es que soy dislexica)
 
-botimprimir=tk.Button(ventana, text="Iniciar impresion", command=inicio_imp)
-botimprimir.pack()
+#Aqui van a aparecer los frames del lado izquierdo
 
-tk.Label(ventana, text="Documentos en cola:").pack()
-listbox=tk.Listbox(ventana, width=40) # es una caja que muestra una lista de items, el 40 con esa cosa rara significa que tiene 40 caracteres de ancho, aqui es donde aparecen los doumentos que agregamos a la cola
-listbox.pack()
+tk.Label(lado_izq, text="Nombre: ", bg="lightblue").grid(row=0, column=0)
+entry_nombre=tk.Entry(lado_izq)
+entry_nombre.grid(row=1,column=0)
 
-estado_label=tk.Label(ventana, text="Sin documentos en cola", fg="blue") #este lo guardamos en una variable, ya que el texto va a cambiar durante el programa, y pues el fg es color del texto, si mi vida, si puede ser rojo
-estado_label.pack()
+tk.Label(lado_izq, text="Paginas: ", bg="lightblue").grid(row=2,column=0)
+entry_paginas=tk.Entry(lado_izq)
+entry_paginas.grid(row=3, column=0, pady=5)
 
-ventana.mainloop() #esto se coloca de ultimas, ya que esta cosa es la que mantiene la ventana abierta y tambien la que capta los cliks, cuando python llega a la linea se queda atascado captanto los clicks hasta que cerremos la ventana, TODO!!! lo que pongamos despues no se va a ejecutar :(
+tk.Label(lado_izq, text="Tiempo por pagina: ", bg="lightblue").grid(row=4, column=0)
+entry_tiempo=tk.Entry(lado_izq)
+entry_tiempo.grid(row=5, column=0)
+
+botagregar=tk.Button(lado_izq, text="Agregar a la cola", command=lambda: agregar_documento())
+botagregar.grid(row=6, column=0, pady=5)
+
+botimprimir=tk.Button(lado_izq, text="Iniciar impresion", command=lambda: inicio_imp())
+botimprimir.grid(row=7, column=0, pady=5)
+
+#Aqui van a aparecer los frames del lado derecho
+
+tk.Label(lado_der, text="Documentos en cola", bg="lightyellow").grid(row=0, column=0)
+listbox=tk.Listbox(lado_der, width=35)
+listbox.grid(row=1, column=0)
+
+estado_label=tk.Label(lado_der, text="Sin documentos en cola", fg="blue", bg="lightyellow")
+estado_label.grid(row=2, column=0)
+
+
+ventana.mainloop()
